@@ -1,0 +1,30 @@
+builds:
+  - binary: nvgm
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+
+release:
+  prerelease: auto
+
+universal_binaries:
+  - replace: true
+
+brews:
+  -
+    name: nvgm
+    homepage: "https://github.com/Golgautier/nutanix_vg_manager"
+    tap:
+      owner: Golgautier
+      name: homebrew-tap
+    commit_author:
+      name: Gautier
+      email: gautier.leblanc@gmail.com
+
+checksum:
+  name_template: 'checksums.txt'
