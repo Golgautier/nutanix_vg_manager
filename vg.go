@@ -49,22 +49,22 @@ func GetVGList() {
 
 	// =========================== Get external iSCSI List ===========================
 	var tmpiscsi struct {
-		DataItemDiscriminator string `json:"$dataItemDiscriminator"`
-		Data                  []struct {
+		Data []struct {
 			ExtID              string `json:"extId"`
 			IscsiInitiatorName string `json:"iscsiInitiatorName"`
 		} `json:"data"`
+		Metadata struct {
+			TotalAvailableResults int `json:"totalAvailableResults"`
+		} `json:"$reserved"`
 	}
 
 	// We do request until we get EMPTY_LIST
-	for page := 0; tmpiscsi.DataItemDiscriminator != "EMPTY_LIST"; page++ {
-
+	for page := 0; page == 0 || tmpiscsi.Metadata.TotalAvailableResults > (page*100); page++ {
 		MyPrism.CallAPIJSON("PC", "GET", fmt.Sprintf("/api/storage/v4.0.a2/config/iscsi-clients?$limit=100&$page=%d", page), "", &tmpiscsi)
-		if tmpiscsi.DataItemDiscriminator != "EMPTY_LIST" {
-			// If list is not empty, we store everything in an array
-			for _, tmp := range tmpiscsi.Data {
-				iSCSI_List[tmp.ExtID] = tmp.IscsiInitiatorName
-			}
+
+		// If list is not empty, we store everything in an array
+		for _, tmp := range tmpiscsi.Data {
+			iSCSI_List[tmp.ExtID] = tmp.IscsiInitiatorName
 		}
 	}
 

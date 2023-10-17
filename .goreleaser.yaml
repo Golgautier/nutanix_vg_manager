@@ -20,7 +20,7 @@ brews:
   -
     name: nvgm
     homepage: "https://github.com/Golgautier/nutanix_vg_manager"
-    tap:
+    repository:
       owner: Golgautier
       name: homebrew-tap
     commit_author:
