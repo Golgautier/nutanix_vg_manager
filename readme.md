@@ -33,16 +33,18 @@ just launch `nvgm` and answer to all questions.
 
 With parameters :
 Launch `nvgm` with several parameters :
-- `-help` or `-usage`: Display usage message
-- `-secure-mode`: Secure mode, to force https with valid certificate
-- `-server <Server name>` : Specify Prism Central name or address
-- `-user <User name>` : Specify user to use (must have admin rights) 
+- `--help` or `-usage`: Display usage message
+- `--secure-mode`: Secure mode, to force https with valid certificate
+- `--server <Server name>` : Specify Prism Central name or address
+- `--user <User name>` : Specify user to use (must have admin rights) 
+- `--debug-mode` : create debug.log fiel with all API calls done to PC
+- `--old-pc` : if you have PC before 2024.1, please use this flag
 
 Password will be requested interactively
 
 Example : 
 ```
-./nvgm -server pc.ntnx.fr -user admin
+./nvgm -server pc.ntnx.fr --user admin
 ```
 
 ## Usage ##

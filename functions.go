@@ -12,7 +12,7 @@ import (
 )
 
 func ProgUsage() bool {
-	fmt.Println("Usage : nvgm [--server <PC Name>] [--user <Username>] [--help] [--usage] [--secure-mode]")
+	fmt.Println("Usage : nvgm [--server <PC Name>] [--user <Username>] [--help] [--usage] [--secure-mode] [--debug-mode] [--old-pc]")
 	os.Exit(1)
 	return true
 }
@@ -26,7 +26,13 @@ func GetPrismInfo() {
 	help := flag.Bool("help", false, "Request usage")
 	usage := flag.Bool("usage", false, "Request usage")
 	secure := flag.Bool("secure-mode", false, "Request usage")
+	debug := flag.Bool("debug-mode", false, "Request usage")
+	compatibility := flag.Bool("old-pc", false, "Request usage")
 	flag.Parse()
+
+	if *help || *usage {
+		ProgUsage()
+	}
 
 	// Affect or request server value
 	if *PC == string("") {
@@ -34,10 +40,6 @@ func GetPrismInfo() {
 		fmt.Scanln(&MyPrism.PC)
 	} else {
 		MyPrism.PC = *PC
-	}
-
-	if *help || *usage {
-		ProgUsage()
 	}
 
 	// Affect or request user value
@@ -65,6 +67,17 @@ func GetPrismInfo() {
 		ActivateSSLCheck(false)
 	}
 
+	if *debug {
+		MyPrism.ActivateDebug("./debug.log")
+	}
+
+	if *compatibility {
+		MyPrism.Compatibility = true
+		fmt.Println("Compatibility mode activated (for 2023.2 < PC < 2024.1)")
+	} else {
+		MyPrism.Compatibility = false
+	}
+
 }
 
 // =========== ActivateSSLCheck ===========
@@ -73,11 +86,11 @@ func ActivateSSLCheck(value bool) {
 
 }
 
-// =========== CheckErr ===========
-// This function is will handle errors
-func CheckErr(context string, err error) {
-	if err != nil {
-		fmt.Println("ERROR", context, " : ", err.Error())
-		os.Exit(2)
-	}
-}
+// // =========== CheckErr ===========
+// // This function is will handle errors
+// func CheckErr(context string, err error) {
+// 	if err != nil {
+// 		fmt.Println("ERROR", context, " : ", err.Error())
+// 		os.Exit(2)
+// 	}
+// }
