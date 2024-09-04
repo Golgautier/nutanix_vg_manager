@@ -40,7 +40,11 @@ func GetVGList() {
 		} `json:"data"`
 	}
 
-	MyPrism.CallAPIJSON("PC", "GET", "/api/storage/v4.0.a2/config/storage-containers", "", &tmp1)
+	if MyPrism.Compatibility {
+		MyPrism.CallAPIJSON("PC", "GET", "/api/storage/v4.0.a2/config/storage-containers", "", &tmp1)
+	} else {
+		MyPrism.CallAPIJSON("PC", "GET", "/api/clustermgmt/v4.0.b2/config/storage-containers", "", &tmp1)
+	}
 
 	// Parse all SC
 	for tmp := range tmp1.Data {

@@ -4,6 +4,12 @@
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
 version: 2
+
+on:
+  push:
+    tags:
+      - "v*"
+
 updates:
   # Enable version updates for Go modules
   - package-ecosystem: "gomod"
