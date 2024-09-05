@@ -301,18 +301,27 @@ func (MyUI *UI) OrderList() {
 }
 
 func (MyUI *UI) PutFilterInAllFields(filter string, i int) {
-	// Only a simple string :
-	MyUI.AdvFilter.UUID[i], _ = regexp.Compile(filter)
-	MyUI.AdvFilter.Name[i], _ = regexp.Compile(filter)
-	MyUI.AdvFilter.Cluster[i], _ = regexp.Compile(filter)
-	MyUI.AdvFilter.Mounted[i], _ = regexp.Compile(filter)
-	MyUI.AdvFilter.Description[i], _ = regexp.Compile(filter)
-	MyUI.AdvFilter.Size[i], _ = regexp.Compile(filter)
-	MyUI.AdvFilter.Container[i], _ = regexp.Compile(filter)
+
+	//Escape parenthesis
+	var clean_filter string
+
+	clean_filter = strings.Replace(filter, ")", "\\)", -1)
+	clean_filter = strings.Replace(clean_filter, "(", "\\(", -1)
+
+	MyUI.AdvFilter.UUID[i], _ = regexp.Compile(clean_filter)
+	MyUI.AdvFilter.Name[i], _ = regexp.Compile(clean_filter)
+	MyUI.AdvFilter.Cluster[i], _ = regexp.Compile(clean_filter)
+	MyUI.AdvFilter.Mounted[i], _ = regexp.Compile(clean_filter)
+	MyUI.AdvFilter.Description[i], _ = regexp.Compile(clean_filter)
+	MyUI.AdvFilter.Size[i], _ = regexp.Compile(clean_filter)
+	MyUI.AdvFilter.Container[i], _ = regexp.Compile(clean_filter)
 }
 
 // Update Filterzone content
 func (MyUI *UI) UpdateContentFilterZone(value string) {
+
+	var clean_filter string
+
 	// initialize backgrounf color
 	background := ConstZoneActive
 	error := false
@@ -341,21 +350,25 @@ func (MyUI *UI) UpdateContentFilterZone(value string) {
 			// Only a simple string :
 			MyUI.PutFilterInAllFields(tmp[0], i)
 		} else {
+			clean_filter = strings.Replace(strings.Join(tmp[1:], ":"), ")", "\\)", -1)
+			clean_filter = strings.Replace(clean_filter, "(", "\\(", -1)
+
 			switch strings.ToLower(tmp[0]) {
+
 			case "container":
-				MyUI.AdvFilter.Container[i], _ = regexp.Compile(strings.Join(tmp[1:], ":"))
+				MyUI.AdvFilter.Container[i], _ = regexp.Compile(clean_filter)
 			case "uuid":
-				MyUI.AdvFilter.UUID[i], _ = regexp.Compile(strings.Join(tmp[1:], ":"))
+				MyUI.AdvFilter.UUID[i], _ = regexp.Compile(clean_filter)
 			case "name":
-				MyUI.AdvFilter.Name[i], _ = regexp.Compile(strings.Join(tmp[1:], ":"))
+				MyUI.AdvFilter.Name[i], _ = regexp.Compile(clean_filter)
 			case "cluster":
-				MyUI.AdvFilter.Cluster[i], _ = regexp.Compile(strings.Join(tmp[1:], ":"))
+				MyUI.AdvFilter.Cluster[i], _ = regexp.Compile(clean_filter)
 			case "mounted":
-				MyUI.AdvFilter.Mounted[i], _ = regexp.Compile(strings.Join(tmp[1:], ":"))
+				MyUI.AdvFilter.Mounted[i], _ = regexp.Compile(clean_filter)
 			case "description", "desc":
-				MyUI.AdvFilter.Description[i], _ = regexp.Compile(strings.Join(tmp[1:], ":"))
+				MyUI.AdvFilter.Description[i], _ = regexp.Compile(clean_filter)
 			case "size":
-				MyUI.AdvFilter.Size[i], _ = regexp.Compile(strings.Join(tmp[1:], ":"))
+				MyUI.AdvFilter.Size[i], _ = regexp.Compile(clean_filter)
 			default:
 				// Not a filed name, considered as simple string
 				MyUI.PutFilterInAllFields(list_filter[i], i)
@@ -685,6 +698,6 @@ func (MyUI *UI) RequestDeleteVG() bool {
 
 // EnterFilter
 func (MyUI *UI) EnterFilter() {
-	tmp := MyUI.AskFilter("Enter your filter", `^[A-Za-z0-9\-\:\|\&\,]$|<Space>`, "black", "green")
+	tmp := MyUI.AskFilter("Enter your filter", `^[A-Za-z0-9\-\:\|\&\,\(\)]$|<Space>`, "black", "green")
 	MyUI.Filter = tmp
 }
