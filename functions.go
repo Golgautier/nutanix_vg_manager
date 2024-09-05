@@ -13,6 +13,7 @@ import (
 
 func ProgUsage() bool {
 	fmt.Println("Usage : nvgm [--server <PC Name>] [--user <Username>] [--help] [--usage] [--secure-mode] [--debug-mode] [--old-pc]")
+	fmt.Println("\nFor any improvement request or bug report, please do it on : https://github.com/Golgautier/nutanix_vg_manager")
 	os.Exit(1)
 	return true
 }
