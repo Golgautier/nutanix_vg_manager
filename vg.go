@@ -18,6 +18,7 @@ type VG struct {
 	Attached       string
 	Attached_vm    []string
 	Attached_iscsi []string
+	Categories     map[string]string
 }
 
 // Create global GlobalVGList
@@ -154,11 +155,14 @@ func GetVGList() {
             {
                 "attribute": "vm_uuids"
             },
-                        {
+            {
                 "attribute": "annotation"
             },
-                                    {
+            {
                 "attribute": "container_uuids"
+            },
+            {
+                "attribute": "categories"
             }
         ]
     }`
@@ -215,6 +219,16 @@ func GetVGList() {
 				if len(tmp2.Values) > 0 {
 
 					tmpelt.Container = StoContainerList[tmp2.Values[0].Values[0]]
+				}
+			case "categories":
+				if len(tmp2.Values) > 0 {
+					tmpelt.Categories = make(map[string]string)
+					for _, catVal := range tmp2.Values[0].Values {
+						parts := strings.SplitN(catVal, ":", 2)
+						if len(parts) == 2 {
+							tmpelt.Categories[parts[0]] = parts[1]
+						}
+					}
 				}
 			}
 

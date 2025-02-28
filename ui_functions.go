@@ -65,6 +65,19 @@ func (MyUI UI) DisplayLine(row int) string {
 	return retvalue
 }
 
+// Function to convert categories map to a string for matching
+func categoriesMatchString(categories map[string]string) string {
+	if len(categories) == 0 {
+		return ""
+	}
+	
+	var result strings.Builder
+	for k, v := range categories {
+		result.WriteString(fmt.Sprintf("%s:%s;", k, v))
+	}
+	return result.String()
+}
+
 // This function return true if vg match with filters
 func (MyUI UI) MatchFilters(vg VG) bool {
 
@@ -75,6 +88,9 @@ func (MyUI UI) MatchFilters(vg VG) bool {
 	if num_filters > ConstMaxANDFiltering {
 		num_filters = ConstMaxANDFiltering
 	}
+
+	// Get categories as string for matching
+	categoriesStr := categoriesMatchString(vg.Categories)
 
 	// We check each filter one by one
 	for i := 0; i < num_filters; i++ {
@@ -89,7 +105,8 @@ func (MyUI UI) MatchFilters(vg VG) bool {
 			MyUI.AdvFilter.Size[i].Match([]byte(vg.Size)) ||
 			MyUI.AdvFilter.UUID[i].Match([]byte(vg.UUID)) ||
 			MyUI.AdvFilter.Mounted[i].Match([]byte(vg.Attached)) ||
-			MyUI.AdvFilter.Description[i].Match([]byte(vg.Description)) {
+			MyUI.AdvFilter.Description[i].Match([]byte(vg.Description)) ||
+			MyUI.AdvFilter.Categories[i].Match([]byte(categoriesStr)) {
 
 			// If one of the filters is ok, we store "true" state
 			results[i] = true
@@ -231,6 +248,14 @@ func (MyUI UI) UpdateDetail() {
 		MyUI.Detail.Text = fmt.Sprintf("%s%-12s: %s\n", MyUI.Detail.Text, "UUID", MyUI.AddFilterHighlight(GlobalVGList[index].UUID, MyUI.AdvFilter.UUID))
 		MyUI.Detail.Text = fmt.Sprintf("%s%-12s: %s\n", MyUI.Detail.Text, "Mounted", MyUI.AddFilterHighlight(GlobalVGList[index].Attached, MyUI.AdvFilter.Mounted))
 		MyUI.Detail.Text = fmt.Sprintf("%s%-12s: %s\n", MyUI.Detail.Text, "Description", MyUI.AddFilterHighlight(GlobalVGList[index].Description, MyUI.AdvFilter.Description))
+		
+		// Add categories
+		if len(GlobalVGList[index].Categories) > 0 {
+			categoriesStr := categoriesMatchString(GlobalVGList[index].Categories)
+			MyUI.Detail.Text = fmt.Sprintf("%s%-12s: %s\n", MyUI.Detail.Text, "Categories", MyUI.AddFilterHighlight(categoriesStr, MyUI.AdvFilter.Categories))
+		} else {
+			MyUI.Detail.Text = fmt.Sprintf("%s%-12s: %s\n", MyUI.Detail.Text, "Categories", "-")
+		}
 	} else {
 		MyUI.Detail.Text = "No row selected"
 	}
@@ -315,6 +340,7 @@ func (MyUI *UI) PutFilterInAllFields(filter string, i int) {
 	MyUI.AdvFilter.Description[i], _ = regexp.Compile(clean_filter)
 	MyUI.AdvFilter.Size[i], _ = regexp.Compile(clean_filter)
 	MyUI.AdvFilter.Container[i], _ = regexp.Compile(clean_filter)
+	MyUI.AdvFilter.Categories[i], _ = regexp.Compile(clean_filter)
 }
 
 // Update Filterzone content
@@ -369,6 +395,8 @@ func (MyUI *UI) UpdateContentFilterZone(value string) {
 				MyUI.AdvFilter.Description[i], _ = regexp.Compile(clean_filter)
 			case "size":
 				MyUI.AdvFilter.Size[i], _ = regexp.Compile(clean_filter)
+			case "categories", "category", "cat":
+				MyUI.AdvFilter.Categories[i], _ = regexp.Compile(clean_filter)
 			default:
 				// Not a filed name, considered as simple string
 				MyUI.PutFilterInAllFields(list_filter[i], i)
@@ -601,6 +629,8 @@ func (MyUI *UI) AskFilter(text string, authorized_chars string, fgcolor string, 
 					tmpfield = "description"
 				case strings.HasPrefix("mounted", strings.ToLower(tmpsub)):
 					tmpfield = "mounted"
+				case strings.HasPrefix("categories", strings.ToLower(tmpsub)):
+					tmpfield = "categories"
 				}
 
 				// If tmpfield exists, we complete the filter

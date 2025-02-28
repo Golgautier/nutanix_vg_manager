@@ -31,6 +31,7 @@ type filter_struct struct {
 	Mounted     [ConstMaxANDFiltering]*regexp.Regexp
 	Description [ConstMaxANDFiltering]*regexp.Regexp
 	Size        [ConstMaxANDFiltering]*regexp.Regexp
+	Categories  [ConstMaxANDFiltering]*regexp.Regexp
 }
 
 // Define Struct for UI design & content
@@ -74,6 +75,7 @@ func (MyUI *UI) Create() {
 		MyUI.AdvFilter.Mounted[i] = tmp
 		MyUI.AdvFilter.Description[i] = tmp
 		MyUI.AdvFilter.Size[i] = tmp
+		MyUI.AdvFilter.Categories[i] = tmp
 	}
 
 	// Get terminal size
