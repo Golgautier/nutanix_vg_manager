@@ -67,3 +67,7 @@ Then, VG are displayed in an array. You can use the following keys :
 - `Ctrl + d` : Delete selected VG (or the highlighted one)
 - `q` : Quit
 
+# ToDo #
+[] 500+ VG support 
+[] v4 API usage
+[] Super-validate/prevent system VG deletion
