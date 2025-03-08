@@ -6,6 +6,7 @@ import (
 	ntnx "nvgm/ntnx_api_call"
 
 	ui "github.com/gizak/termui/v3"
+	tb "github.com/nsf/termbox-go"
 )
 
 // Global variable
@@ -35,6 +36,9 @@ func main() {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}
 	defer ui.Close()
+
+	// DisableMouseInput in termbox-go to allow copy/paste works
+	tb.SetInputMode(tb.InputEsc)
 
 	// Create initial UI
 	MyUI.Create()
