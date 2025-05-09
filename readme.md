@@ -68,6 +68,5 @@ Then, VG are displayed in an array. You can use the following keys :
 - `q` : Quit
 
 # ToDo #
-[] 500+ VG support 
-[] v4 API usage
-[] Super-validate/prevent system VG deletion
+- 500+ VG support 
+- v4 API usage
