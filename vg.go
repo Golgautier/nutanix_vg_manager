@@ -19,10 +19,12 @@ type VG struct {
 	Attached_vm    []string
 	Attached_iscsi []string
 	Categories     map[string]string
+	System         string
 }
 
 // Create global GlobalVGList
 var GlobalVGList []VG
+var SystemVgIdentifier = []string{"etcd", "lcm", "object", "anc-"}
 
 // function to get list (without details, we want quick operation)
 func GetVGList() {
@@ -235,6 +237,7 @@ func GetVGList() {
 		}
 		tmpelt.Size = fmt.Sprintf("%0.2f (%0.2f used)", sto_capacity, sto_used)
 
+		// Handeling attached VM and iSCSI
 		if len(tmpelt.Attached_vm) > 0 || len(tmpelt.Attached_iscsi) > 0 {
 			var tmp []string
 			var j_vm string = ""
@@ -265,6 +268,15 @@ func GetVGList() {
 			tmpelt.Attached = "False"
 		}
 		tmpelt.UUID = tmp.EntityID
+
+		// We check if this VG a system VG
+		tmpelt.System = "False"
+		for _, identifier := range SystemVgIdentifier {
+			if strings.Contains(tmpelt.Name, identifier) || strings.Contains(tmpelt.Description, identifier) {
+				tmpelt.System = "True"
+				break
+			}
+		}
 
 		GlobalVGList = append(GlobalVGList, tmpelt)
 	}

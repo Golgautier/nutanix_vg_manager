@@ -16,21 +16,33 @@ var VGSelected = make(map[string]bool)
 // The index will match with index of list.Rows, the value will point on VG_List
 var DisplayedVGPairing = []int{}
 
+const warningSymbol = "\U00002620"
+
 // Display line fonction
 // Will handle selection and filter highlighting. Parameter : row of the VG_list to display
 func (MyUI UI) DisplayLine(row int) string {
 	// Create line
-	var retvalue, prefix, suffix string
+	var retvalue, prefix, suffix, systemSuffix string
+	var systemSuffixLen int
 	var selected bool
+
+	if GlobalVGList[row].System == "True" {
+		systemSuffix = " " + warningSymbol
+		systemSuffixLen = 2
+	} else {
+		systemSuffix = ""
+		systemSuffixLen = 0
+	}
 
 	// Check if selected or not
 	if VGSelected[GlobalVGList[row].UUID] {
 		prefix = " * ["
-		suffix = "]" + ConstSelectionHighlight
+		suffix = systemSuffix + "]" + ConstSelectionHighlight
 		selected = true
 	} else {
+		// Not system
 		prefix = "   "
-		suffix = ""
+		suffix = systemSuffix
 		selected = false
 	}
 
@@ -54,10 +66,10 @@ func (MyUI UI) DisplayLine(row int) string {
 
 	// Add space to get good length
 	// (only if term_width > len tmp)
-	d_length := len(GlobalVGList[row].Name) + len(GlobalVGList[row].UUID) + 10 // Count line chars, borders(4) and selection prefix(3)
+	d_length := len(GlobalVGList[row].Name) + len(GlobalVGList[row].UUID) + systemSuffixLen + 10 // Count line chars, borders(4) and selection prefix(3)
 
 	if d_length < MyUI.TermWidth {
-		retvalue = fmt.Sprintf("%s%s%s%s", prefix, tmp, strings.Repeat(" ", MyUI.TermWidth-d_length), suffix)
+		retvalue = fmt.Sprintf("%s%s%s%s", prefix, tmp, suffix, strings.Repeat(" ", MyUI.TermWidth-d_length))
 	} else {
 		retvalue = fmt.Sprintf("%s%s%s", prefix, tmp, suffix)
 	}
@@ -70,7 +82,7 @@ func categoriesMatchString(categories map[string]string) string {
 	if len(categories) == 0 {
 		return ""
 	}
-	
+
 	var result strings.Builder
 	for k, v := range categories {
 		result.WriteString(fmt.Sprintf("%s:%s;", k, v))
@@ -106,7 +118,8 @@ func (MyUI UI) MatchFilters(vg VG) bool {
 			MyUI.AdvFilter.UUID[i].Match([]byte(vg.UUID)) ||
 			MyUI.AdvFilter.Mounted[i].Match([]byte(vg.Attached)) ||
 			MyUI.AdvFilter.Description[i].Match([]byte(vg.Description)) ||
-			MyUI.AdvFilter.Categories[i].Match([]byte(categoriesStr)) {
+			MyUI.AdvFilter.Categories[i].Match([]byte(categoriesStr)) ||
+			MyUI.AdvFilter.System[i].Match([]byte(vg.System)) {
 
 			// If one of the filters is ok, we store "true" state
 			results[i] = true
@@ -248,7 +261,7 @@ func (MyUI UI) UpdateDetail() {
 		MyUI.Detail.Text = fmt.Sprintf("%s%-12s: %s\n", MyUI.Detail.Text, "UUID", MyUI.AddFilterHighlight(GlobalVGList[index].UUID, MyUI.AdvFilter.UUID))
 		MyUI.Detail.Text = fmt.Sprintf("%s%-12s: %s\n", MyUI.Detail.Text, "Mounted", MyUI.AddFilterHighlight(GlobalVGList[index].Attached, MyUI.AdvFilter.Mounted))
 		MyUI.Detail.Text = fmt.Sprintf("%s%-12s: %s\n", MyUI.Detail.Text, "Description", MyUI.AddFilterHighlight(GlobalVGList[index].Description, MyUI.AdvFilter.Description))
-		
+
 		// Add categories
 		if len(GlobalVGList[index].Categories) > 0 {
 			categoriesStr := categoriesMatchString(GlobalVGList[index].Categories)
@@ -256,6 +269,13 @@ func (MyUI UI) UpdateDetail() {
 		} else {
 			MyUI.Detail.Text = fmt.Sprintf("%s%-12s: %s\n", MyUI.Detail.Text, "Categories", "-")
 		}
+
+		if GlobalVGList[index].System == "True" {
+			MyUI.Detail.Text = fmt.Sprintf("%s%-12s: %s\n", MyUI.Detail.Text, "System", "True "+warningSymbol, MyUI.AdvFilter.System)
+		} else {
+			MyUI.Detail.Text = fmt.Sprintf("%s%-12s: %s\n", MyUI.Detail.Text, "System", "False", MyUI.AdvFilter.System)
+		}
+
 	} else {
 		MyUI.Detail.Text = "No row selected"
 	}
@@ -341,6 +361,7 @@ func (MyUI *UI) PutFilterInAllFields(filter string, i int) {
 	MyUI.AdvFilter.Size[i], _ = regexp.Compile(clean_filter)
 	MyUI.AdvFilter.Container[i], _ = regexp.Compile(clean_filter)
 	MyUI.AdvFilter.Categories[i], _ = regexp.Compile(clean_filter)
+	MyUI.AdvFilter.System[i], _ = regexp.Compile(clean_filter)
 }
 
 // Update Filterzone content
@@ -397,6 +418,8 @@ func (MyUI *UI) UpdateContentFilterZone(value string) {
 				MyUI.AdvFilter.Size[i], _ = regexp.Compile(clean_filter)
 			case "categories", "category", "cat":
 				MyUI.AdvFilter.Categories[i], _ = regexp.Compile(clean_filter)
+			case "system", "sys":
+				MyUI.AdvFilter.System[i], _ = regexp.Compile(clean_filter)
 			default:
 				// Not a filed name, considered as simple string
 				MyUI.PutFilterInAllFields(list_filter[i], i)
@@ -470,17 +493,17 @@ func (MyUI *UI) Log(content string, fgcolor string, bgcolor string) {
 
 // Display Asking Value
 func (MyUI *UI) DisplayAskContent(text string, current_value string, fgcolor string, bgcolor string) {
-	tmp := ""
+	variablePart := ""
 
 	// If term width is longer than content, we add
 	if len(current_value) < (MyUI.TermWidth - len(text) - 5) {
-		tmp = current_value + strings.Repeat(" ", MyUI.TermWidth-len(current_value)-len(text)-7)
+		variablePart = current_value + strings.Repeat(" ", MyUI.TermWidth-len(current_value)-len(text)-7)
 	} else {
-		tmp = current_value
+		variablePart = current_value
 	}
 
 	// We update interact bar
-	MyUI.Interact.Text = fmt.Sprintf("%s : [%s](fg:%s,bg:%s)", text, tmp, fgcolor, bgcolor)
+	MyUI.Interact.Text = fmt.Sprintf("%s : [%s](fg:%s,bg:%s)", text, variablePart, fgcolor, bgcolor)
 	MyUI.UpdateDetail()
 	MyUI.Render()
 }
@@ -631,6 +654,8 @@ func (MyUI *UI) AskFilter(text string, authorized_chars string, fgcolor string, 
 					tmpfield = "mounted"
 				case strings.HasPrefix("categories", strings.ToLower(tmpsub)):
 					tmpfield = "categories"
+				case strings.HasPrefix("system", strings.ToLower(tmpsub)):
+					tmpfield = "system"
 				}
 
 				// If tmpfield exists, we complete the filter
@@ -663,7 +688,7 @@ func (MyUI *UI) AskFilter(text string, authorized_chars string, fgcolor string, 
 func (MyUI *UI) UpdateVGDescription() {
 
 	NewDesc := MyUI.Ask("New description to set", `[A-Za-z0-9\-\:\|\&\_\,\ ]`, "black", "green")
-	Confirm := MyUI.Ask(fmt.Sprintf("Please write ['CONFIRM'](mod:bold) to update %d VG", MyUI.SelectedItems), `[A-Za-z0-9\-\:\|\&\_\,\ ]`, "black", "green")
+	Confirm := MyUI.Ask(fmt.Sprintf("Please write ['CONFIRM'] to update %d VG", MyUI.SelectedItems), `[A-Za-z0-9\-\:\|\&\_\,\ ]`, "black", "green")
 
 	if Confirm == "CONFIRM" {
 
@@ -688,12 +713,47 @@ func (MyUI *UI) UpdateVGDescription() {
 	}
 }
 
+// AreThereSystemVGInSelection
+func (MyUI *UI) AreThereSystemVGInSelection() bool {
+	var vg VG
+
+	for uuid, state := range VGSelected {
+		if state {
+			// We browse VG list to find VG with good UUID
+			for _, vg = range GlobalVGList {
+				if vg.UUID == uuid {
+					// We found the VG
+					break // for loop
+				}
+			}
+
+			// We look at system flag
+			if vg.System == "True" {
+				return true
+			}
+		}
+		// We continue for next VG
+	}
+
+	// If no system VG, we can proceed
+	return false
+}
+
 // Update Description
 func (MyUI *UI) RequestDeleteVG() bool {
 
-	Confirm := MyUI.Ask(fmt.Sprintf("Deletion of %d VG, data will not be retievable. Write ['I UNDERSTAND'](mod:bold) to confirm", MyUI.SelectedItems), `[A-Za-z0-9\-\:\|\&\_\,\ ]`, "black", "green")
+	var expected, Confirm string
 
-	if strings.ToUpper(Confirm) == "I UNDERSTAND" {
+	// Behaviour is different if we have system VG in selection
+	if MyUI.AreThereSystemVGInSelection() {
+		expected = "I UNDERSTAND AND FORCE"
+		Confirm = MyUI.Ask(fmt.Sprintf("Deletion of %d VG, some are SYSTEM, data will not be retievable. Confirm with ['"+expected+"']", MyUI.SelectedItems), `[A-Za-z0-9\-\:\|\&\_\,\ ]`, "white", "red")
+	} else {
+		expected = "I UNDERSTAND"
+		Confirm = MyUI.Ask(fmt.Sprintf("Deletion of %d VG, data will not be retievable. Confirm with ['"+expected+"']", MyUI.SelectedItems), `[A-Za-z0-9\-\:\|\&\_\,\ ]`, "black", "green")
+	}
+
+	if strings.ToUpper(Confirm) == expected {
 
 		MyUI.Log("Please wait during VG deletion (can take a while)...", "yellow", "clear")
 
