@@ -32,6 +32,7 @@ type filter_struct struct {
 	Description [ConstMaxANDFiltering]*regexp.Regexp
 	Size        [ConstMaxANDFiltering]*regexp.Regexp
 	Categories  [ConstMaxANDFiltering]*regexp.Regexp
+	System      [ConstMaxANDFiltering]*regexp.Regexp
 }
 
 // Define Struct for UI design & content
@@ -76,6 +77,7 @@ func (MyUI *UI) Create() {
 		MyUI.AdvFilter.Description[i] = tmp
 		MyUI.AdvFilter.Size[i] = tmp
 		MyUI.AdvFilter.Categories[i] = tmp
+		MyUI.AdvFilter.System[i] = tmp
 	}
 
 	// Get terminal size
@@ -103,7 +105,7 @@ func (MyUI *UI) Create() {
 	MyUI.Detail.Title = "Details"
 	MyUI.Detail.WrapText = false
 	MyUI.Detail.PaddingLeft = 1
-	MyUI.Detail.PaddingTop = 1
+	MyUI.Detail.PaddingTop = 0
 	MyUI.Detail.SetRect(0, MyUI.TermHeight-ConstDetailHeight-ConstInteractHeight-ConstFooterHeight+2, MyUI.TermWidth, MyUI.TermHeight-ConstInteractHeight-ConstFooterHeight+2)
 
 	MyUI.Interact = widgets.NewParagraph()
