@@ -24,13 +24,16 @@ type VG struct {
 
 // Create global GlobalVGList
 var GlobalVGList []VG
-var SystemVgIdentifier = []string{"etcd", "lcm", "object", "anc-"}
+var SystemVgIdentifier = []string{"etcd", "lcm", "object", "anc-", "NTNX-"}
 
 // function to get list (without details, we want quick operation)
 func GetVGList() {
 	var StoContainerList = make(map[string]string) // UUID => Storage Container name
 	var VM_List = make(map[string]string)          // UUID => VM Name
 	var iSCSI_List = make(map[string]string)       // UUID => iSCSI
+	var pageToParse = bool(true)                   // For loop to parse all pages
+	var pageNumber = int(0)                        // page increment for the loop
+	var eltPerPage = int(500)                      // Number of VG per page
 
 	// Reinit VG_List
 	GlobalVGList = nil
@@ -133,152 +136,170 @@ func GetVGList() {
 				EntityID string `json:"entity_id"`
 			} `json:"entity_results"`
 		} `json:"group_results"`
+		TotalEntityCount int `json:"total_entity_count"`
 	}
 
-	// We do the API call to get VG list
-	payload := `{
-        "entity_type": "volume_group_config",
-        "group_member_attributes": [
-            {
-                "attribute": "name"
-            },
-            {
-                "attribute": "controller_user_bytes"
-            },
-            {
-                "attribute": "client_uuids"
-            },
-            {
-                "attribute": "cluster_name"
-            },
-            {
-                "attribute": "capacity_bytes"
-            },
-            {
-                "attribute": "vm_uuids"
-            },
-            {
-                "attribute": "annotation"
-            },
-            {
-                "attribute": "container_uuids"
-            },
-            {
-                "attribute": "categories"
-            }
-        ]
-    }`
-	MyPrism.CallAPIJSON("PC", "POST", "/api/nutanix/v3/groups", payload, &VGList)
+	for pageToParse {
+		fmt.Println(" - Getting page ", pageNumber)
 
-	// Parse all VG an put them in a file
-	for _, tmp := range VGList.GroupResults[0].EntityResults {
-
-		// Create vg
-		var tmpelt VG
-		var sto_used, sto_capacity float64
-
-		for _, tmp2 := range tmp.Data {
-
-			// Fill struct elements regarding "name" field
-			switch tmp2.Name {
-			case "name":
-				if len(tmp2.Values) > 0 {
-					tmpelt.Name = tmp2.Values[0].Values[0]
+		// We do the API call to get VG list
+		payload := `{
+			"entity_type": "volume_group_config",
+			"group_member_count": ` + strconv.Itoa(eltPerPage) + `,
+			"group_member_offset": ` + strconv.Itoa(pageNumber*eltPerPage) + `,
+			"group_member_sort_attribute": "name",
+			"group_member_sort_order": "ASCENDING",		
+			"group_member_attributes": [
+				{
+					"attribute": "name"
+				},
+				{
+					"attribute": "controller_user_bytes"
+				},
+				{
+					"attribute": "client_uuids"
+				},
+				{
+					"attribute": "cluster_name"
+				},
+				{
+					"attribute": "capacity_bytes"
+				},
+				{
+					"attribute": "vm_uuids"
+				},
+				{
+					"attribute": "annotation"
+				},
+				{
+					"attribute": "container_uuids"
+				},
+				{
+					"attribute": "categories"
 				}
-			case "controller_user_bytes":
-				if len(tmp2.Values) > 0 {
+			]
+		}`
 
-					conv, _ := strconv.Atoi(tmp2.Values[0].Values[0])
-					sto_used = float64(conv) / (1024 * 1024 * 1024)
-				}
-			case "client_uuids":
-				if len(tmp2.Values) > 0 {
+		MyPrism.CallAPIJSON("PC", "POST", "/api/nutanix/v3/groups", payload, &VGList)
 
-					tmpelt.Attached_iscsi = tmp2.Values[0].Values
-				}
-			case "cluster_name":
-				if len(tmp2.Values) > 0 {
+		// Parse all VG an put them in a file
+		for _, tmp := range VGList.GroupResults[0].EntityResults {
 
-					tmpelt.Cluster = tmp2.Values[0].Values[0]
-				}
-			case "capacity_bytes":
-				if len(tmp2.Values) > 0 {
+			// Create vg
+			var tmpelt VG
+			var sto_used, sto_capacity float64
 
-					conv, _ := strconv.Atoi(tmp2.Values[0].Values[0])
-					sto_capacity = float64(conv) / (1024 * 1024 * 1024)
-				}
-			case "vm_uuids":
-				if len(tmp2.Values) > 0 {
+			for _, tmp2 := range tmp.Data {
 
-					tmpelt.Attached_vm = tmp2.Values[0].Values
-				}
-			case "annotation":
-				if len(tmp2.Values) > 0 {
+				// Fill struct elements regarding "name" field
+				switch tmp2.Name {
+				case "name":
+					if len(tmp2.Values) > 0 {
+						tmpelt.Name = tmp2.Values[0].Values[0]
+					}
+				case "controller_user_bytes":
+					if len(tmp2.Values) > 0 {
 
-					tmpelt.Description = tmp2.Values[0].Values[0]
-				}
-			case "container_uuids":
-				if len(tmp2.Values) > 0 {
+						conv, _ := strconv.Atoi(tmp2.Values[0].Values[0])
+						sto_used = float64(conv) / (1024 * 1024 * 1024)
+					}
+				case "client_uuids":
+					if len(tmp2.Values) > 0 {
 
-					tmpelt.Container = StoContainerList[tmp2.Values[0].Values[0]]
-				}
-			case "categories":
-				if len(tmp2.Values) > 0 {
-					tmpelt.Categories = make(map[string]string)
-					for _, catVal := range tmp2.Values[0].Values {
-						parts := strings.SplitN(catVal, ":", 2)
-						if len(parts) == 2 {
-							tmpelt.Categories[parts[0]] = parts[1]
+						tmpelt.Attached_iscsi = tmp2.Values[0].Values
+					}
+				case "cluster_name":
+					if len(tmp2.Values) > 0 {
+
+						tmpelt.Cluster = tmp2.Values[0].Values[0]
+					}
+				case "capacity_bytes":
+					if len(tmp2.Values) > 0 {
+
+						conv, _ := strconv.Atoi(tmp2.Values[0].Values[0])
+						sto_capacity = float64(conv) / (1024 * 1024 * 1024)
+					}
+				case "vm_uuids":
+					if len(tmp2.Values) > 0 {
+
+						tmpelt.Attached_vm = tmp2.Values[0].Values
+					}
+				case "annotation":
+					if len(tmp2.Values) > 0 {
+
+						tmpelt.Description = tmp2.Values[0].Values[0]
+					}
+				case "container_uuids":
+					if len(tmp2.Values) > 0 {
+
+						tmpelt.Container = StoContainerList[tmp2.Values[0].Values[0]]
+					}
+				case "categories":
+					if len(tmp2.Values) > 0 {
+						tmpelt.Categories = make(map[string]string)
+						for _, catVal := range tmp2.Values[0].Values {
+							parts := strings.SplitN(catVal, ":", 2)
+							if len(parts) == 2 {
+								tmpelt.Categories[parts[0]] = parts[1]
+							}
 						}
 					}
 				}
+
+			}
+			tmpelt.Size = fmt.Sprintf("%0.2f (%0.2f used)", sto_capacity, sto_used)
+
+			// Handeling attached VM and iSCSI
+			if len(tmpelt.Attached_vm) > 0 || len(tmpelt.Attached_iscsi) > 0 {
+				var tmp []string
+				var j_vm string = ""
+				var j_iscsi string = ""
+
+				if len(tmpelt.Attached_vm) > 0 {
+					tmp = []string{}
+					for _, vmuuid := range tmpelt.Attached_vm {
+						tmp = append(tmp, VM_List[vmuuid])
+					}
+					j_vm = strings.Join(tmp, ",")
+				} else {
+					j_vm = "-"
+				}
+
+				if len(tmpelt.Attached_iscsi) > 0 {
+					tmp = []string{}
+					for _, iscsi_uuid := range tmpelt.Attached_iscsi {
+						tmp = append(tmp, iSCSI_List[iscsi_uuid])
+					}
+					j_iscsi = strings.Join(tmp, ",")
+				} else {
+					j_iscsi = "-"
+				}
+
+				tmpelt.Attached = fmt.Sprintf("True (VM : %s / iSCSI : %s)", j_vm, j_iscsi)
+			} else {
+				tmpelt.Attached = "False"
+			}
+			tmpelt.UUID = tmp.EntityID
+
+			// We check if this VG a system VG
+			tmpelt.System = "False"
+			for _, identifier := range SystemVgIdentifier {
+				if strings.Contains(tmpelt.Name, identifier) || strings.Contains(tmpelt.Description, identifier) {
+					tmpelt.System = "True"
+					break
+				}
 			}
 
+			GlobalVGList = append(GlobalVGList, tmpelt)
 		}
-		tmpelt.Size = fmt.Sprintf("%0.2f (%0.2f used)", sto_capacity, sto_used)
 
-		// Handeling attached VM and iSCSI
-		if len(tmpelt.Attached_vm) > 0 || len(tmpelt.Attached_iscsi) > 0 {
-			var tmp []string
-			var j_vm string = ""
-			var j_iscsi string = ""
-
-			if len(tmpelt.Attached_vm) > 0 {
-				tmp = []string{}
-				for _, vmuuid := range tmpelt.Attached_vm {
-					tmp = append(tmp, VM_List[vmuuid])
-				}
-				j_vm = strings.Join(tmp, ",")
-			} else {
-				j_vm = "-"
-			}
-
-			if len(tmpelt.Attached_iscsi) > 0 {
-				tmp = []string{}
-				for _, iscsi_uuid := range tmpelt.Attached_iscsi {
-					tmp = append(tmp, iSCSI_List[iscsi_uuid])
-				}
-				j_iscsi = strings.Join(tmp, ",")
-			} else {
-				j_iscsi = "-"
-			}
-
-			tmpelt.Attached = fmt.Sprintf("True (VM : %s / iSCSI : %s)", j_vm, j_iscsi)
+		// If other VG need to be laoded, we restart the function
+		if VGList.TotalEntityCount > (pageNumber+1)*eltPerPage {
+			pageNumber++
 		} else {
-			tmpelt.Attached = "False"
-		}
-		tmpelt.UUID = tmp.EntityID
-
-		// We check if this VG a system VG
-		tmpelt.System = "False"
-		for _, identifier := range SystemVgIdentifier {
-			if strings.Contains(tmpelt.Name, identifier) || strings.Contains(tmpelt.Description, identifier) {
-				tmpelt.System = "True"
-				break
-			}
+			pageToParse = false
 		}
 
-		GlobalVGList = append(GlobalVGList, tmpelt)
 	}
 
 }

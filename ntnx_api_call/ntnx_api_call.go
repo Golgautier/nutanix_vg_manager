@@ -109,7 +109,7 @@ func (e *Ntnx_endpoint) ActivateDebug(filename string) {
 
 // =========== CallAPIJSON ===========
 // Do a call API and unmarshall the result
-func (e Ntnx_endpoint) CallAPIJSON(target string, method string, url string, payload string, retour interface{}) {
+func (e Ntnx_endpoint) CallAPIJSON(target string, method string, url string, payload string, retValue interface{}) {
 
 	var long_url, ReqMethod string
 	var jsonStr []byte
@@ -195,6 +195,6 @@ func (e Ntnx_endpoint) CallAPIJSON(target string, method string, url string, pay
 	CheckErr("Unable to read API answer body", err, e.DebugMode, e.DebugLogger)
 
 	// Transform json answer to map
-	err = json.Unmarshal(bodyBytes, &retour)
+	err = json.Unmarshal(bodyBytes, &retValue)
 	CheckErr("Unable to get json answer from API Call.", err, e.DebugMode, e.DebugLogger)
 }
