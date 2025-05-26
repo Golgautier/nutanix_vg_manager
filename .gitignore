@@ -3,3 +3,4 @@ dist/
 binaries/
 BuildBinaries.sh
 nvgm
+temp
