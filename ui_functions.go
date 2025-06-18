@@ -80,7 +80,7 @@ func (MyUI UI) DisplayLine(row int) string {
 // Function to convert categories map to a string for matching
 func categoriesMatchString(categories map[string]string) string {
 	if len(categories) == 0 {
-		return ""
+		return "---"
 	}
 
 	var result strings.Builder
@@ -267,7 +267,7 @@ func (MyUI UI) UpdateDetail() {
 			categoriesStr := categoriesMatchString(GlobalVGList[index].Categories)
 			MyUI.Detail.Text = fmt.Sprintf("%s%-12s: %s\n", MyUI.Detail.Text, "Categories", MyUI.AddFilterHighlight(categoriesStr, MyUI.AdvFilter.Categories))
 		} else {
-			MyUI.Detail.Text = fmt.Sprintf("%s%-12s: %s\n", MyUI.Detail.Text, "Categories", "-")
+			MyUI.Detail.Text = fmt.Sprintf("%s%-12s: %s\n", MyUI.Detail.Text, "Categories", MyUI.AddFilterHighlight("---", MyUI.AdvFilter.Categories))
 		}
 
 		if GlobalVGList[index].System == "True" {
