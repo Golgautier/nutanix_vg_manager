@@ -128,6 +128,12 @@ func (e Ntnx_endpoint) CallAPIJSON(target string, method string, url string, pay
 	if strings.ToUpper(method) == "POST" {
 		jsonStr = []byte(payload)
 		ReqMethod = http.MethodPost
+
+		// Check if URL contains 'v4'
+		if strings.Contains(url, "/v4.") {
+			additionalHeaders["NTNX-Request-Id"] = uuid.New().String()
+		}
+
 	} else if strings.ToUpper(method) == "GET" {
 		jsonStr = nil
 		ReqMethod = http.MethodGet
