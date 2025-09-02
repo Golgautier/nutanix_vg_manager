@@ -1,0 +1,5 @@
+2025-09-02T14:15:10.283+0200	DEBUG	New API Call : GET https://pc.ntnxlab.org:9440/api/nutanix/v3/users/me 
+
+2025-09-02T14:15:10.890+0200	DEBUG	API Call Error : 401 Unauthorized
+&{GET https://pc.ntnxlab.org:9440/api/nutanix/v3/users/me HTTP/1.1 %!s(int=1) %!s(int=1) map[Accept:[application/json] Authorization:[Basic ZG1pbjp4MlRlY2g3MzYh] Content-Type:[application/json]] {} %!s(func() (io.ReadCloser, error)=0x644860) %!s(int64=0) [] %!s(bool=false) pc.ntnxlab.org:9440 map[] map[] %!s(*multipart.Form=<nil>) map[]   %!s(*tls.ConnectionState=<nil>) %!s(<-chan struct {}=<nil>) %!s(*http.Response=<nil>) {{}} %!s(*http.pattern=<nil>) [] map[]}
+

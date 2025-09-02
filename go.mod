@@ -19,4 +19,5 @@ require (
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
+    github.com/google/uuid v1.3.0 // indirect
 )

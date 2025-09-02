@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -114,7 +115,9 @@ func (e Ntnx_endpoint) CallAPIJSON(target string, method string, url string, pay
 	var long_url, ReqMethod string
 	var jsonStr []byte
 	var resp *http.Response
+	var additionalHeaders map[string]string
 	client := &http.Client{}
+	additionalHeaders = make(map[string]string)
 
 	if strings.ToUpper(target) == "PE" {
 		long_url = "https://" + e.PE + ":9440" + url
@@ -132,8 +135,9 @@ func (e Ntnx_endpoint) CallAPIJSON(target string, method string, url string, pay
 		jsonStr = []byte(payload)
 		ReqMethod = http.MethodPatch
 	} else if strings.ToUpper(method) == "DELETE" {
-		jsonStr = []byte(payload)
+		// Useless jsonStr = []byte(payload)
 		ReqMethod = http.MethodDelete
+		additionalHeaders["NTNX-Request-Id"] = uuid.New().String()
 	} else {
 		log.Fatalln("HTTP method", method, "not handled")
 	}
@@ -152,6 +156,13 @@ func (e Ntnx_endpoint) CallAPIJSON(target string, method string, url string, pay
 	// Define default headers
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
+
+	// Add additional headers if needed
+	if additionalHeaders != nil && len(additionalHeaders) > 0 {
+		for key, value := range additionalHeaders {
+			req.Header.Add(key, value)
+		}
+	}
 
 	if e.Mode == "password" {
 		// Authentication

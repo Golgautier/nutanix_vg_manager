@@ -324,7 +324,7 @@ func DeleteVG(uuid string) bool {
 
 	// We start by detaching iscsi connection if exists
 	for _, tmp := range vg.Attached_iscsi {
-		MyPrism.CallAPIJSON("PC", "POST", "/api/storage/v4.0.a2/config/volume-groups/"+vg.UUID+"/$actions/detach-iscsi-client/"+tmp, "", &answer)
+		MyPrism.CallAPIJSON("PC", "POST", "/api/volumes/v4.0/config/volume-groups/"+vg.UUID+"/$actions/detach-iscsi-client/"+tmp, "", &answer)
 
 		tmp2 := strings.Split(answer.Data.ExtID, ":")
 		state := WaitForTask(tmp2[1])
@@ -336,7 +336,7 @@ func DeleteVG(uuid string) bool {
 
 	// We continue by detaching vm connection if exists
 	for _, tmp := range vg.Attached_vm {
-		MyPrism.CallAPIJSON("PC", "POST", "/api/storage/v4.0.a2/config/volume-groups/"+vg.UUID+"/$actions/detach-vm/"+tmp, "", &answer)
+		MyPrism.CallAPIJSON("PC", "POST", "/api/volumes/v4.0/config/volume-groups/"+vg.UUID+"/$actions/detach-vm/"+tmp, "", &answer)
 
 		tmp2 := strings.Split(answer.Data.ExtID, ":")
 		state := WaitForTask(tmp2[1])
@@ -347,7 +347,7 @@ func DeleteVG(uuid string) bool {
 	}
 
 	// Now we can delete the VG
-	MyPrism.CallAPIJSON("PC", "DELETE", "/api/storage/v4.0.a2/config/volume-groups/"+vg.UUID, "", &answer)
+	MyPrism.CallAPIJSON("PC", "DELETE", "/api/volumes/v4.0/config/volume-groups/"+vg.UUID, "", &answer)
 
 	tmp2 := strings.Split(answer.Data.ExtID, ":")
 	state := WaitForTask(tmp2[1])
